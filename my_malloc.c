@@ -118,9 +118,8 @@ void bf_free(void * ptr, block ** free_block_head) {  // can be lock / nolock
   block * block_toFree =
       (block *)((char *)ptr - sizeof(block));  // go to where struct pointer is
   free_space += block_toFree->size + sizeof(block);
-  // pthread_mutex_lock(&lock);
   check_merge(block_toFree);
-  // pthread_mutex_unlock(&lock);
+
 }
 
 //bf malloc is similar to ff other than we will maintain a diff to track the best fit
@@ -188,7 +187,7 @@ void * bf_malloc(size_t size, block ** free_block_head, int sbrk_lock) {
 void * ts_malloc_lock(size_t size) {
   pthread_mutex_lock(&lock);
   int sbrk_lock = 0;
-  void * ans = bf_malloc(size, &free_list_head, sbrk_lock);  // lock
+  void * ans = bf_malloc(size, &free_list_head, sbrk_lock);  
   pthread_mutex_unlock(&lock);
   return ans;
 }
@@ -199,7 +198,7 @@ void ts_free_lock(void * ptr) {
 }
 void * ts_malloc_nolock(size_t size) {
   int sbrk_lock = 1;
-  void * ans = bf_malloc(size, &free_list_head_nolock, sbrk_lock);  // lock
+  void * ans = bf_malloc(size, &free_list_head_nolock, sbrk_lock);  
   return ans;
 }
 void ts_free_nolock(void * ptr) {
