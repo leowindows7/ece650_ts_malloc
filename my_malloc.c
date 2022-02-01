@@ -124,11 +124,21 @@ void bf_free(void * ptr, block ** free_block_head) {  // can be lock / nolock
 }
 
 //bf malloc is similar to ff other than we will maintain a diff to track the best fit
-void * bf_malloc(size_t size, block ** free_block_head, int sbrk_block) {
+void * bf_malloc(size_t size, block ** free_block_head, int sbrk_lock) {
   block * curr_block = head_block;
   if (curr_block == NULL) {
     data_size += size + sizeof(block);
-    block * new_block = sbrk(size + sizeof(block));
+    block * new_block;
+    if (sbrk_lock == 1) {
+      pthread_mutex_lock(&lock);
+      new_block =
+          sbrk(size + sizeof(block));  // no available space on the list, create a new one
+      pthread_mutex_unlock(&lock);
+    }
+    else {
+      new_block =
+          sbrk(size + sizeof(block));  // no available space on the list, create a new one
+    }
     new_block->size = size;
     new_block->prev = NULL;
     new_block->next = NULL;
@@ -136,7 +146,6 @@ void * bf_malloc(size_t size, block ** free_block_head, int sbrk_block) {
     curr_block = new_block;
   }
   else {
-    pthread_mutex_lock(&lock);
     size_t diff = INT_MAX;
     block * smallestDiff = NULL;
     //curr_block = free_list_head;
@@ -155,14 +164,23 @@ void * bf_malloc(size_t size, block ** free_block_head, int sbrk_block) {
       return split_block(smallestDiff, size);
     }
     data_size += size + sizeof(block);
-    block * new_block =
-        sbrk(size + sizeof(block));  // no available space on the list, create a new one
+    block * new_block;
+    if (sbrk_lock == 1) {
+      pthread_mutex_lock(&lock);
+      new_block =
+          sbrk(size + sizeof(block));  // no available space on the list, create a new one
+      pthread_mutex_unlock(&lock);
+    }
+    else {
+      new_block =
+          sbrk(size + sizeof(block));  // no available space on the list, create a new one
+    }
+
     new_block->size = size;
     new_block->prev = NULL;
     new_block->next = NULL;
     head_block = new_block;
     curr_block = new_block;
-    pthread_mutex_unlock(&lock);
   }
   return (char *)curr_block + sizeof(block);
 }
