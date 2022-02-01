@@ -7,6 +7,7 @@
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 block *head_block = NULL;
 block *free_list_head = NULL;
+__thread Metadata * free_list_head__nolock = NULL;
 size_t data_size = 0;
 size_t free_space = 0;
 
@@ -110,7 +111,7 @@ void remove_block(block *block_toRemove) {
   }
 }
 
-void bf_free(void *ptr) {
+void bf_free(void *ptr block **first_free_block) { // bf_free changed
   block *block_toFree;
   block_toFree = (block *)((char *)ptr - sizeof(block)); // go to where struct pointer is 
   free_space += block_toFree->size + sizeof(block);
